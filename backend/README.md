@@ -1,6 +1,6 @@
-# Washroom Review Backend API
+# Washroom Review Backend API (PostgreSQL)
 
-A standalone Express.js backend server for the washroom review system that connects to your existing PostgreSQL database.
+A standalone Express.js backend server for the washroom review system that connects directly to your PostgreSQL database.
 
 ## 🚀 Quick Start
 
@@ -27,10 +27,11 @@ A standalone Express.js backend server for the washroom review system that conne
 
 ## 🔧 Configuration
 
-Update your `.env` file with your existing database connection:
+Update your `.env` file with your PostgreSQL database connection:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/your_database_name
+# PostgreSQL Connection
+DATABASE_URL=postgresql://username:password@localhost:5432/washroom_reviews
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
@@ -85,7 +86,7 @@ curl "http://localhost:5000/api/reviews/location?latitude=28.6139&longitude=77.2
 
 ## 🔒 Features
 
-- **Database Integration**: Connects to your existing PostgreSQL database
+- **PostgreSQL Integration**: Direct connection to your PostgreSQL database
 - **Image Processing**: Automatic image compression with Sharp
 - **Input Validation**: Comprehensive validation with Joi
 - **Error Handling**: Centralized error handling with detailed logging
@@ -95,7 +96,7 @@ curl "http://localhost:5000/api/reviews/location?latitude=28.6139&longitude=77.2
 
 ## 🗄️ Database Requirements
 
-The API expects your database to have a `scanned_feedback` table with these columns:
+The API connects directly to your PostgreSQL database and expects a `scanned_feedback` table with these columns:
 - `id` (BIGSERIAL PRIMARY KEY)
 - `toilet_id` (BIGINT)
 - `name` (VARCHAR)

@@ -62,9 +62,10 @@ app.use('/api/upload', uploadRoutes)
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Washroom Review API Server',
+    message: 'Washroom Review API Server (PostgreSQL)',
     version: '1.0.0',
     status: 'running',
+    database: 'PostgreSQL',
     endpoints: {
       health: '/api/health',
       reviews: '/api/reviews',
@@ -81,6 +82,7 @@ app.use(errorHandler)
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📊 Environment: ${process.env.NODE_ENV}`)
+  console.log(`🗄️  Database: PostgreSQL`)
   console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`)
   console.log(`📝 API Documentation available at: http://localhost:${PORT}`)
 })
