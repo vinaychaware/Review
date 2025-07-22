@@ -1,0 +1,22 @@
+datasource db {
+  provider = "postgresql"
+  url      =  DATABASE_URL=postgresql://postgres:12345d@localhost:5432/user_response
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model UserResponse {
+  id          BigInt     @id
+  toilet_id   BigInt
+  name        String?
+  email       String?
+  phone       String?
+  rating      Float
+  description String?
+  reason_ids  Int[]      // No foreign key enforcement on arrays in Prisma yet
+  images      String[]
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+}
