@@ -4,9 +4,8 @@ import { asyncHandler } from '../middleware/errorMiddleware.js'
 
 const router = express.Router()
 
-// GET /api/health - Health check endpoint
+// GET /api/health - Basic health check
 router.get('/', asyncHandler(async (req, res) => {
-  // Check database connection
   let dbStatus = 'disconnected'
   let dbLatency = null
   
@@ -36,7 +35,6 @@ router.get('/', asyncHandler(async (req, res) => {
     }
   }
 
-  // Return 503 if database is not connected
   const statusCode = dbStatus === 'connected' ? 200 : 503
 
   res.status(statusCode).json({
@@ -81,7 +79,6 @@ router.get('/detailed', asyncHandler(async (req, res) => {
     details: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`
   })
 
-  // Overall status
   const overallStatus = checks.every(check => check.status === 'pass') ? 'pass' : 
                        checks.some(check => check.status === 'fail') ? 'fail' : 'warn'
 

@@ -2,6 +2,7 @@ import express from 'express'
 import multer from 'multer'
 import sharp from 'sharp'
 import { asyncHandler, ApiError } from '../middleware/errorMiddleware.js'
+import { Review } from '../models/Review.js'
 
 const router = express.Router()
 
@@ -13,7 +14,6 @@ const upload = multer({
     files: parseInt(process.env.MAX_FILES) || 5
   },
   fileFilter: (req, file, cb) => {
-    // Check file type
     if (file.mimetype.startsWith('image/')) {
       cb(null, true)
     } else {
@@ -34,7 +34,6 @@ router.post('/images',
 
     for (const file of req.files) {
       try {
-        // Process image with Sharp
         const processedBuffer = await sharp(file.buffer)
           .resize({
             width: parseInt(process.env.IMAGE_MAX_WIDTH) || 1920,
@@ -48,7 +47,6 @@ router.post('/images',
           })
           .toBuffer()
 
-        // Convert to base64
         const base64Image = `data:image/jpeg;base64,${processedBuffer.toString('base64')}`
         
         processedImages.push({
@@ -115,15 +113,12 @@ router.post('/review-with-images',
 
         } catch (error) {
           console.error(`Error processing image ${file.originalname}:`, error)
-          // Continue with other images instead of failing completely
         }
       }
     }
 
     reviewData.images = images
 
-    // Import Review model dynamically to avoid circular dependency
-    const { Review } = await import('../models/Review.js')
     const review = await Review.create(reviewData)
 
     res.status(201).json({

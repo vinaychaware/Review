@@ -7,26 +7,19 @@ class Database {
   constructor() {
     this.pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
       ssl: process.env.NODE_ENV === 'production' ? {
         rejectUnauthorized: false,
       } : false,
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
     })
 
-    // Handle pool errors
     this.pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err)
       process.exit(-1)
     })
 
-    // Test connection on startup
     this.testConnection()
   }
 
@@ -37,7 +30,7 @@ class Database {
       client.release()
     } catch (error) {
       console.error('❌ Database connection failed:', error.message)
-      process.exit(1)
+      console.log('Please check your DATABASE_URL in .env file')
     }
   }
 
