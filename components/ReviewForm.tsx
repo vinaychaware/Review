@@ -137,11 +137,13 @@ export default function ReviewForm() {
       formData.append('address', data.location.address)
       
       // Append images
+      formData.append('imageCount', data.images?.length.toString() || '0')
       data.images?.forEach((image, index) => {
         formData.append(`image_${index}`, image)
       })
       
-      const response = await fetch('/api/submit-review', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/reviews`, {
         method: 'POST',
         body: formData
       })
