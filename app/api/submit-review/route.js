@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import pool from '@/lib/db'
+import { ReviewService } from '@/lib/services/ReviewService.js'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,65 +11,50 @@ export async function POST(request) {
   try {
     const formData = await request.formData()
 
-    const name = formData.get('name')
-    const email = formData.get('email')
-    const phone = formData.get('phone')
-    const rating = parseFloat(formData.get('rating'))
-    const description = formData.get('description') || ''
-    const reason_ids = JSON.parse(formData.get('reason_ids') || '[]')
-    const latitude = parseFloat(formData.get('latitude'))
-    const longitude = parseFloat(formData.get('longitude'))
-    const address = formData.get('address') || ''
-    const imageCount = parseInt(formData.get('imageCount') || '0')
-
-    if (!name || !email || !phone || isNaN(rating) || isNaN(latitude) || isNaN(longitude)) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // Extract form data
+    const reviewData = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      rating: parseFloat(formData.get('rating')),
+      description: formData.get('description') || '',
+      reason_ids: JSON.parse(formData.get('reason_ids') || '[]'),
+      latitude: parseFloat(formData.get('latitude')),
+      longitude: parseFloat(formData.get('longitude')),
+      address: formData.get('address') || ''
     }
 
-    const images = []
+    // Extract images
+    const imageCount = parseInt(formData.get('imageCount') || '0')
+    const imageFiles = []
+
     for (let i = 0; i < imageCount; i++) {
       const imageFile = formData.get(`image_${i}`)
       if (imageFile) {
-        const arrayBuffer = await imageFile.arrayBuffer()
-        const base64 = Buffer.from(arrayBuffer).toString('base64')
-        const mimeType = imageFile.type
-        const base64String = `data:${mimeType};base64,${base64}`
-        images.push(base64String)
+        imageFiles.push(imageFile)
       }
     }
 
-    const client = await pool.connect()
+    // Use ReviewService to create the review
+    const result = await ReviewService.createReview(reviewData, imageFiles)
 
-    const insertQuery = `
-      INSERT INTO scanned_feedback (
-        toilet_id, name, email, phone, rating, description, reason_ids, images, latitude, longitude, address
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING *
-    `
-
-    const result = await client.query(insertQuery, [
-      1,
-      name,
-      email,
-      phone,
-      rating,
-      description,
-      reason_ids,
-      images,
-      latitude,
-      longitude,
-      address
-    ])
-
-    client.release()
-
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error, message: result.message },
+        { status: 400 }
+      )
+    }
     return NextResponse.json({
-      message: 'Review submitted successfully',
-      data: result.rows[0]
+      success: true,
+      message: result.message,
+      data: result.data
     }, { status: 200 })
 
   } catch (error) {
     console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error', message: 'Failed to submit review' },
+      { status: 500 }
+    )
   }
 }
