@@ -3,41 +3,41 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-class Database {
+class PostgreSQLDatabase {
   constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is required')
+    }
+
     this.pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
       ssl: process.env.NODE_ENV === 'production' ? {
         rejectUnauthorized: false,
       } : false,
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
     })
 
-    // Handle pool errors
     this.pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err)
       process.exit(-1)
     })
 
-    // Test connection on startup
     this.testConnection()
   }
 
   async testConnection() {
     try {
       const client = await this.pool.connect()
-      console.log('✅ Database connected successfully')
+      const result = await client.query('SELECT version()')
+      console.log('✅ PostgreSQL connected successfully')
+      console.log(`📊 Database version: ${result.rows[0].version.split(' ')[0]} ${result.rows[0].version.split(' ')[1]}`)
       client.release()
     } catch (error) {
-      console.error('❌ Database connection failed:', error.message)
-      process.exit(1)
+      console.error('❌ PostgreSQL connection failed:', error.message)
+      console.log('Please check your PostgreSQL DATABASE_URL in .env file')
+      throw error
     }
   }
 
@@ -46,10 +46,12 @@ class Database {
     try {
       const result = await this.pool.query(text, params)
       const duration = Date.now() - start
-      console.log('Executed query', { text: text.substring(0, 50), duration, rows: result.rowCount })
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Executed query', { text: text.substring(0, 50), duration, rows: result.rowCount })
+      }
       return result
     } catch (error) {
-      console.error('Database query error:', error)
+      console.error('PostgreSQL query error:', error)
       throw error
     }
   }
@@ -60,8 +62,8 @@ class Database {
 
   async close() {
     await this.pool.end()
-    console.log('Database connection pool closed')
+    console.log('PostgreSQL connection pool closed')
   }
 }
 
-export default new Database()
+export default new PostgreSQLDatabase()

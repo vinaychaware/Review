@@ -18,7 +18,6 @@ export class Review {
     this.updated_at = data.updated_at
   }
 
-  // Create a new review
   static async create(reviewData) {
     const query = `
       INSERT INTO scanned_feedback (
@@ -51,7 +50,6 @@ export class Review {
     }
   }
 
-  // Find review by ID
   static async findById(id) {
     const query = 'SELECT * FROM scanned_feedback WHERE id = $1'
     
@@ -64,16 +62,11 @@ export class Review {
     }
   }
 
-  // Find all reviews with pagination
   static async findAll(limit = 50, offset = 0, filters = {}) {
-    let query = `
-      SELECT * FROM scanned_feedback 
-      WHERE 1=1
-    `
+    let query = `SELECT * FROM scanned_feedback WHERE 1=1`
     const values = []
     let paramCount = 1
 
-    // Add filters
     if (filters.rating) {
       query += ` AND rating >= $${paramCount}`
       values.push(filters.rating)
@@ -99,7 +92,6 @@ export class Review {
       const result = await db.query(query, values)
       const reviews = result.rows.map(row => new Review(row))
 
-      // Get total count for pagination
       const countQuery = 'SELECT COUNT(*) FROM scanned_feedback WHERE 1=1'
       const countResult = await db.query(countQuery)
       const total = parseInt(countResult.rows[0].count)
@@ -115,7 +107,6 @@ export class Review {
     }
   }
 
-  // Find reviews by location
   static async findByLocation(latitude, longitude, radiusKm = 1, limit = 50) {
     const query = `
       SELECT *, 
@@ -139,7 +130,6 @@ export class Review {
     }
   }
 
-  // Get statistics
   static async getStatistics() {
     try {
       const queries = {
@@ -157,33 +147,21 @@ export class Review {
           SELECT COUNT(*) as count 
           FROM scanned_feedback 
           WHERE created_at >= NOW() - INTERVAL '7 days'
-        `,
-        topIssues: `
-          SELECT 
-            unnest(reason_ids) as issue_id,
-            COUNT(*) as count
-          FROM scanned_feedback 
-          WHERE reason_ids IS NOT NULL AND array_length(reason_ids, 1) > 0
-          GROUP BY issue_id 
-          ORDER BY count DESC 
-          LIMIT 10
         `
       }
 
-      const [total, avgRating, distribution, recent, topIssues] = await Promise.all([
+      const [total, avgRating, distribution, recent] = await Promise.all([
         db.query(queries.total),
         db.query(queries.avgRating),
         db.query(queries.ratingDistribution),
-        db.query(queries.recentCount),
-        db.query(queries.topIssues)
+        db.query(queries.recentCount)
       ])
 
       return {
         totalReviews: parseInt(total.rows[0].count),
         averageRating: parseFloat(avgRating.rows[0].avg_rating || 0).toFixed(2),
         ratingDistribution: distribution.rows,
-        recentReviews: parseInt(recent.rows[0].count),
-        topIssues: topIssues.rows
+        recentReviews: parseInt(recent.rows[0].count)
       }
     } catch (error) {
       console.error('Error getting statistics:', error)
@@ -191,7 +169,6 @@ export class Review {
     }
   }
 
-  // Update review
   async update(updateData) {
     const allowedFields = ['name', 'email', 'phone', 'rating', 'description', 'reason_ids']
     const updates = []
@@ -235,7 +212,6 @@ export class Review {
     }
   }
 
-  // Delete review
   async delete() {
     const query = 'DELETE FROM scanned_feedback WHERE id = $1 RETURNING *'
     

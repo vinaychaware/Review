@@ -4,19 +4,18 @@ import { asyncHandler } from '../middleware/errorMiddleware.js'
 
 const router = express.Router()
 
-// GET /api/health - Health check endpoint
+// GET /api/health - Basic health check
 router.get('/', asyncHandler(async (req, res) => {
-  // Check database connection
-  let dbStatus = 'disconnected'
+  let postgresStatus = 'disconnected'
   let dbLatency = null
   
   try {
     const start = Date.now()
-    await db.query('SELECT 1')
+    const result = await db.query('SELECT version()')
     dbLatency = Date.now() - start
-    dbStatus = 'connected'
+    postgresStatus = 'connected'
   } catch (error) {
-    console.error('Database health check failed:', error)
+    console.error('PostgreSQL health check failed:', error)
   }
 
   const healthData = {
@@ -25,8 +24,8 @@ router.get('/', asyncHandler(async (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV,
     version: '1.0.0',
-    database: {
-      status: dbStatus,
+    postgresql: {
+      status: postgresStatus,
       latency: dbLatency ? `${dbLatency}ms` : null
     },
     memory: {
@@ -36,13 +35,12 @@ router.get('/', asyncHandler(async (req, res) => {
     }
   }
 
-  // Return 503 if database is not connected
-  const statusCode = dbStatus === 'connected' ? 200 : 503
+  const statusCode = postgresStatus === 'connected' ? 200 : 503
 
   res.status(statusCode).json({
-    success: dbStatus === 'connected',
+    success: postgresStatus === 'connected',
     data: healthData,
-    message: dbStatus === 'connected' ? 'Service is healthy' : 'Service is unhealthy'
+    message: postgresStatus === 'connected' ? 'PostgreSQL service is healthy' : 'PostgreSQL service is unhealthy'
   })
 }))
 
@@ -50,21 +48,21 @@ router.get('/', asyncHandler(async (req, res) => {
 router.get('/detailed', asyncHandler(async (req, res) => {
   const checks = []
 
-  // Database check
+  // PostgreSQL check
   try {
     const start = Date.now()
     const result = await db.query('SELECT COUNT(*) FROM scanned_feedback')
     const latency = Date.now() - start
     
     checks.push({
-      name: 'database',
+      name: 'postgresql',
       status: 'pass',
       latency: `${latency}ms`,
-      details: `${result.rows[0].count} reviews in database`
+      details: `${result.rows[0].count} reviews in PostgreSQL database`
     })
   } catch (error) {
     checks.push({
-      name: 'database',
+      name: 'postgresql',
       status: 'fail',
       error: error.message
     })
@@ -81,7 +79,6 @@ router.get('/detailed', asyncHandler(async (req, res) => {
     details: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`
   })
 
-  // Overall status
   const overallStatus = checks.every(check => check.status === 'pass') ? 'pass' : 
                        checks.some(check => check.status === 'fail') ? 'fail' : 'warn'
 
