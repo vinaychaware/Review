@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reviews {
+  id          BigInt    @id @default(autoincrement())
+  toilet_id   BigInt?
+  name        String?   @db.VarChar(100)
+  email       String?   @db.VarChar(100)
+  phone       String?   @db.VarChar(20)
+  rating      Float?  
+  description String?
+  reason_ids  Int[]
+  images      String[]
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  toilets     toilets?  @relation(fields: [toilet_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model toilets {
+  id            BigInt    @id @default(autoincrement())
+  location_name String?   @db.VarChar(255)
+  latitude      Float?
+  longitude     Float?
+  address       String?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  reviews       reviews[]
+}
